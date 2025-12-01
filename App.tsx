@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { AgentRole, AnalysisStatus, WorkflowState, AgentConfig, ApiKeys } from './types';
 import { runAnalystsStage, runManagersStage, runRiskStage, runGMStage } from './services/geminiService';
-import { fetchStockData, formatStockDataForPrompt } from './services/juheService';
+import { fetchStockData, formatStockDataForPrompt, buildStockContext } from './services/juheService';
+import { extractIntervalsFromText, validateAndAdjustIntervals, generateIntervalReport, type StockContext } from './intervalUtils';
 import StockInput from './components/StockInput';
 import AgentCard from './components/AgentCard';
 import { DEFAULT_AGENTS } from './constants';
@@ -13,6 +14,7 @@ const initialState: WorkflowState = {
   currentStep: 0,
   stockSymbol: '',
   stockDataContext: '',
+  stockContext: undefined,
   outputs: {},
   agentConfigs: JSON.parse(JSON.stringify(DEFAULT_AGENTS)), // 深拷贝默认配置
   apiKeys: {}
@@ -99,14 +101,17 @@ const App: React.FC = () => {
       }
       
       stockDataContext = formatStockDataForPrompt(stockData);
+      const stockContext = buildStockContext(stockData);
       console.log(`[前端] 成功获取 ${stockData.name} (${stockData.gid}) 的实时数据`);
+      console.log(`[前端] 股票上下文:`, stockContext);
       
       // 更新状态，准备开始第一阶段分析
       setState(prev => ({
         ...prev,
         status: AnalysisStatus.RUNNING,
         currentStep: 1,
-        stockDataContext: stockDataContext
+        stockDataContext: stockDataContext,
+        stockContext: stockContext
       }));
 
       // 步骤 1: 5位分析师并行分析 (Analysts)
@@ -139,11 +144,45 @@ const App: React.FC = () => {
       // 步骤 4: 总经理最终决策 (GM)
       const outputsAfterStep3 = { ...outputsAfterStep2, ...riskResults };
       const gmResult = await runGMStage(symbol, outputsAfterStep3, state.agentConfigs, apiKeys, stockDataContext);
+      
+      // 步骤 5: 区间验证与调整（自动后处理）
+      let finalGMOutput = gmResult[AgentRole.GM];
+      try {
+        const extractedIntervals = extractIntervalsFromText(finalGMOutput);
+        if (extractedIntervals && stockData) {
+          const stockContext: StockContext = {
+            currentPrice: parseFloat(stockData.nowPri),
+            dailyAmplitude: ((parseFloat(stockData.todayMax) - parseFloat(stockData.todayMin)) / parseFloat(stockData.nowPri)) * 100,
+            volume: parseFloat(stockData.traNumber),
+            volatility20d: ((parseFloat(stockData.todayMax) - parseFloat(stockData.todayMin)) / parseFloat(stockData.nowPri)) * 1.8
+          };
+          
+          const adjustedIntervals = validateAndAdjustIntervals(
+            extractedIntervals,
+            stockContext,
+            undefined,
+            AgentRole.GM
+          );
+          
+          // 如果区间被调整，生成验证报告并附加到GM输出
+          if (adjustedIntervals.adjustments.length > 0 || adjustedIntervals.warnings.length > 0) {
+            const validationReport = generateIntervalReport(adjustedIntervals);
+            finalGMOutput += `
+
+---
+
+${validationReport}`;
+          }
+        }
+      } catch (error) {
+        console.warn('[区间验证] 自动验证失败，保留原始输出:', error);
+      }
+      
       setState(prev => ({
         ...prev,
         status: AnalysisStatus.COMPLETED,
         currentStep: 5, // 流程结束
-        outputs: { ...prev.outputs, ...gmResult }
+        outputs: { ...prev.outputs, [AgentRole.GM]: finalGMOutput }
       }));
 
     } catch (error) {

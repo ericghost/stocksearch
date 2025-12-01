@@ -43,6 +43,21 @@ export interface DapanData {
   traNumber: string; // 成交量（万手）
 }
 
+// 扩展的股票上下文数据（用于区间验证）
+export interface ExtendedStockContext {
+  currentPrice: number;
+  volatility20d?: number;      // 20日波动率（基于涨跌幅计算）
+  dailyAmplitude: number;      // 日振幅百分比
+  volume: number;              // 成交量（手）
+  turnover: number;            // 成交额（元）
+  priceChange: number;         // 涨跌幅
+  marketIndex?: {              // 大盘指数信息
+    name: string;
+    point: number;
+    change: number;
+  };
+}
+
 // API响应结构
 interface JuheApiResponse {
   resultcode: string;
@@ -58,6 +73,14 @@ interface JuheApiResponse {
     };
   }>;
   error_code?: number;
+}
+
+/**
+ * 计算20日波动率（简化版，基于当日振幅估算）
+ */
+function estimateVolatility20d(dailyAmplitude: number): number {
+  // 简化算法：假设20日波动率约为日振幅的1.5-2倍
+  return (dailyAmplitude / 100) * 1.8;
 }
 
 /**
@@ -90,12 +113,48 @@ export async function fetchStockData(symbol: string, apiKey?: string): Promise<S
       return null;
     }
 
+    // 附加大盘数据（如果存在）
+    if (result.data.dapandata) {
+      (stockData as any).dapandata = result.data.dapandata;
+    }
+
     return stockData;
 
   } catch (error) {
     console.error('[AlphaCouncil] 获取股票数据失败:', error instanceof Error ? error.message : String(error));
     return null;
   }
+}
+
+/**
+ * 构建扩展股票上下文（用于区间验证）
+ */
+export function buildStockContext(data: StockRealtimeData): ExtendedStockContext {
+  const currentPrice = parseFloat(data.nowPri);
+  const todayMax = parseFloat(data.todayMax);
+  const todayMin = parseFloat(data.todayMin);
+  const dailyAmplitude = ((todayMax - todayMin) / currentPrice) * 100;
+  
+  const context: ExtendedStockContext = {
+    currentPrice,
+    dailyAmplitude,
+    volume: parseFloat(data.traNumber),
+    turnover: parseFloat(data.traAmount),
+    priceChange: parseFloat(data.increPer),
+    volatility20d: estimateVolatility20d(dailyAmplitude)
+  };
+  
+  // 添加大盘数据（如果存在）
+  const dapandata = (data as any).dapandata;
+  if (dapandata) {
+    context.marketIndex = {
+      name: dapandata.name,
+      point: parseFloat(dapandata.dot),
+      change: parseFloat(dapandata.rate)
+    };
+  }
+  
+  return context;
 }
 
 /**
@@ -113,6 +172,23 @@ export function formatStockDataForPrompt(data: StockRealtimeData | null): string
   const traAmountFormatted = parseFloat(data.traAmount) > 100000000
     ? `${(parseFloat(data.traAmount) / 100000000).toFixed(2)}亿元`
     : `${(parseFloat(data.traAmount) / 10000).toFixed(2)}万元`;
+  
+  // 计算日振幅
+  const todayMax = parseFloat(data.todayMax);
+  const todayMin = parseFloat(data.todayMin);
+  const currentPrice = parseFloat(data.nowPri);
+  const dailyAmplitude = ((todayMax - todayMin) / currentPrice) * 100;
+  
+  // 获取大盘数据
+  const dapandata = (data as any).dapandata;
+  const marketIndexInfo = dapandata ? `
+【大盘指数】
+  指数名称: ${dapandata.name}
+  当前点位: ${dapandata.dot}
+  涨跌幅度: ${parseFloat(dapandata.rate) >= 0 ? '+' : ''}${dapandata.rate}%
+  成交量: ${dapandata.traNumber}万手
+  成交额: ${dapandata.traAmount}亿元
+` : '';
 
   return `
 ╔═══════════════════════════════════════════════════════════╗
@@ -138,6 +214,8 @@ export function formatStockDataForPrompt(data: StockRealtimeData | null): string
 【成交情况】
   成交量: ${traNumberFormatted}
   成交额: ${traAmountFormatted}
+  日振幅: ${dailyAmplitude.toFixed(2)}%
+  流动性: ${parseFloat(data.traAmount) > 100000000 ? '充足' : parseFloat(data.traAmount) > 50000000 ? '一般' : '偏弱'}${marketIndexInfo}
 
 【五档盘口】（关键数据：研判买卖力量对比）
   ┌─────────────────────────────────────┐

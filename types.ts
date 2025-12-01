@@ -58,12 +58,21 @@ export interface ApiKeys {
   juhe?: string;
 }
 
+// 股票上下文（用于区间验证）
+export interface StockContext {
+  currentPrice: number;
+  volatility20d?: number;
+  dailyAmplitude: number;
+  volume: number;
+}
+
 // 全局工作流状态
 export interface WorkflowState {
   status: AnalysisStatus;
   currentStep: number; // 0: Idle, 1: Analysts, 2: Managers, 3: Risk, 4: GM
   stockSymbol: string;
   stockDataContext: string; // 存储格式化后的聚合数据
+  stockContext?: StockContext; // 存储股票上下文（用于区间验证）
   outputs: Partial<Record<AgentRole, string>>; // 各智能体的输出内容
   error?: string;
   agentConfigs: Record<AgentRole, AgentConfig>; // 可动态修改的配置
