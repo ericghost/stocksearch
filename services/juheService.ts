@@ -31,6 +31,8 @@ export interface StockRealtimeData {
   sellThree: string; sellThreePri: string;
   sellFour: string; sellFourPri: string;
   sellFive: string; sellFivePri: string;
+  // 大盘数据（可选）
+  dapandata?: DapanData;
 }
 
 // 大盘数据接口
@@ -96,7 +98,7 @@ export async function fetchStockData(symbol: string, apiKey?: string): Promise<S
 
     // 附加大盘数据（如果存在）
     if (result.data.dapandata) {
-      (stockData as any).dapandata = result.data.dapandata;
+      stockData.dapandata = result.data.dapandata;
     }
 
     return stockData;
@@ -132,7 +134,7 @@ export function formatStockDataForPrompt(data: StockRealtimeData | null): string
   const dailyAmplitude = ((todayMax - todayMin) / currentPrice) * 100;
   
   // 获取大盘数据
-  const dapandata = (data as any).dapandata;
+  const dapandata = data.dapandata;
   const marketIndexInfo = dapandata ? `
 【大盘指数】
   指数名称: ${dapandata.name}
