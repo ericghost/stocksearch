@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { AgentConfig, AgentRole } from '../types';
+import { AgentConfig, ModelProvider } from '../types';
 import * as Icons from 'lucide-react';
 import { MODEL_OPTIONS } from '../constants';
 import { 
@@ -8,8 +8,18 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
 } from 'recharts';
 
-// 机械键盘音效
-const KEYPRESS_SOUND = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="; 
+// 图表数据类型定义
+interface BarChartData {
+  chartType: 'bar';
+  data: Array<{ name: string; value: number }>;
+}
+
+interface RadarChartData {
+  chartType: 'radar';
+  data: Array<{ subject: string; A: number; fullMark: number }>;
+}
+
+type ChartData = BarChartData | RadarChartData | null; 
 
 interface AgentCardProps {
   config: AgentConfig;
@@ -21,12 +31,15 @@ interface AgentCardProps {
 }
 
 // 提取 JSON 的辅助函数
-const extractJson = (text: string) => {
+const extractJson = (text: string): ChartData => {
   const regex = /```json\s*([\s\S]*?)\s*```/;
   const match = text.match(regex);
   if (match) {
     try {
-      return JSON.parse(match[1]);
+      const parsed = JSON.parse(match[1]);
+      if (parsed.chartType === 'bar' || parsed.chartType === 'radar') {
+        return parsed as ChartData;
+      }
     } catch (e) {
       console.error("JSON parse failed", e);
     }
@@ -45,14 +58,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ config, content, isLoading, isPen
   const [displayedContent, setDisplayedContent] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [chartData, setChartData] = useState<any>(null);
-
-  // 需要强制使用 Google Search 的智能体角色（Gemini）
-  const GEMINI_AGENTS = [AgentRole.MACRO, AgentRole.INDUSTRY, AgentRole.FUNDS];
-  const isGeminiAgent = GEMINI_AGENTS.includes(config.id);
-  
-  // 其他智能体强制使用 DeepSeek
-  const isDeepSeekAgent = !isGeminiAgent;
+  const [chartData, setChartData] = useState<ChartData>(null);
 
   useEffect(() => {
     if (!audioContextRef.current) {
@@ -141,17 +147,18 @@ const AgentCard: React.FC<AgentCardProps> = ({ config, content, isLoading, isPen
     if (isLoading || isPending) return null; // 加载或等待期间不渲染
 
     if (chartData.chartType === 'bar') {
+        const barData = chartData as BarChartData;
         return (
             <div className="h-40 w-full mt-4 animate-fade-in">
                 <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={160}>
-                    <BarChart data={chartData.data}>
+                    <BarChart data={barData.data}>
                         <XAxis dataKey="name" tick={{fontSize: 10, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
                         <Tooltip 
                             contentStyle={{backgroundColor: '#1e293b', borderColor: '#334155', fontSize: '12px'}} 
                             cursor={{fill: 'rgba(255,255,255,0.05)'}}
                         />
                         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                            {chartData.data.map((entry: any, index: number) => (
+                            {barData.data.map((_, index: number) => (
                                 <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#06b6d4' : '#3b82f6'} />
                             ))}
                         </Bar>
@@ -162,10 +169,11 @@ const AgentCard: React.FC<AgentCardProps> = ({ config, content, isLoading, isPen
     }
     
     if (chartData.chartType === 'radar') {
-         return (
+        const radarData = chartData as RadarChartData;
+        return (
             <div className="h-40 w-full mt-4 animate-fade-in">
                 <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={160}>
-                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData.data}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData.data}>
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="subject" tick={{fontSize: 10, fill: '#94a3b8'}} />
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
@@ -174,7 +182,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ config, content, isLoading, isPen
                     </RadarChart>
                 </ResponsiveContainer>
             </div>
-         );
+        );
     }
     return null;
   };
