@@ -72,3 +72,15 @@ export interface WorkflowState {
   agentConfigs: Record<AgentRole, AgentConfig>; // 可动态修改的配置
   apiKeys: ApiKeys;
 }
+
+// 历史记录项
+export interface HistoryItem {
+  id: string;
+  stockSymbol: string;
+  status: AnalysisStatus;
+  currentStep: number;
+  timestamp: number;
+  completedAt?: number;
+  gmDecision?: string; // 总经理的决策（买入/观望/卖出）
+  outputs: Partial<Record<AgentRole, string>>;
+}
