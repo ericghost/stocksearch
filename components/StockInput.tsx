@@ -75,18 +75,6 @@ const StockInput: React.FC<StockInputProps> = ({ onAnalyze, disabled }) => {
                     </p>
                     
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">Google Gemini API Key</label>
-                        <input
-                            type="password"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                            placeholder="选填，用于 Gemini 模型调用"
-                            value={apiKeys.gemini || ''}
-                            onChange={(e) => setApiKeys({...apiKeys, gemini: e.target.value})}
-                            disabled={disabled}
-                        />
-                    </div>
-                    
-                    <div>
                         <label className="block text-xs text-slate-400 mb-1">DeepSeek API Key</label>
                         <input
                             type="password"
