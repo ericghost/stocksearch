@@ -11,8 +11,8 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     icon: "Globe",
     color: "slate",
     temperature: 0.2,
-    modelProvider: ModelProvider.QWEN,
-    modelName: 'qwen-turbo',
+    modelProvider: ModelProvider.DEEPSEEK,
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是资深A股宏观政策分析师。
 **输出风格**：冷酷、客观、宏观视角。
 **任务**：
@@ -31,8 +31,8 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     icon: "PieChart",
     color: "cyan",
     temperature: 0.3,
-    modelProvider: ModelProvider.QWEN,
-    modelName: 'qwen-turbo',
+    modelProvider: ModelProvider.DEEPSEEK,
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是A股行业轮动专家。
 **输出风格**：简单直接，突出行业景气与资金偏好。
 **任务**：分析当前市场最强的主线。
@@ -62,7 +62,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "violet",
     temperature: 0.15,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-reasoner',
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是A股中长期技术分析专家。
 **输出风格**：点位优先，像机构量化交易员。
 **任务**：基于提供的开盘/现价/买卖盘口数据，判断中长期方向。
@@ -85,7 +85,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "emerald",
     temperature: 0.3,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-reasoner',
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是资金流向分析专家。
 **输出风格**：像一个老庄家，看穿对手盘。
 **任务**：分析盘口买卖单（五档行情），判断主力是在吸筹还是出货。
@@ -103,7 +103,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "blue",
     temperature: 0.2,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-reasoner',
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是基本面估值专家。
 **输出风格**：价值投资信徒，通过数据说话。
 **特殊要求**：
@@ -134,8 +134,8 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     icon: "Users",
     color: "indigo",
     temperature: 0.35,
-    modelProvider: ModelProvider.QWEN,
-    modelName: 'qwen-turbo',
+    modelProvider: ModelProvider.DEEPSEEK,
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是基本面研究总监。
 **风格**：总结、提炼、裁决。
 **任务**：整合下属（宏观、行业、估值）报告。如果三者有分歧，你必须做出裁决。
@@ -153,7 +153,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "fuchsia",
     temperature: 0.4,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-chat',
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是市场动能总监。
 **风格**：像个短线游资大佬，快准狠。
 **任务**：整合技术和资金面。如果有主力吸筹且形态突破，坚决看多。
@@ -173,7 +173,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "orange",
     temperature: 0.2,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-reasoner',
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是系统性风险总监。
 **风格**：理性平衡，关注风险收益比。
 **核心原则**：
@@ -195,8 +195,8 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     icon: "Scale",
     color: "amber",
     temperature: 0.3,
-    modelProvider: ModelProvider.QWEN,
-    modelName: 'qwen-turbo',
+    modelProvider: ModelProvider.DEEPSEEK,
+    modelName: 'deepseek-v4-flash',
     systemPrompt: `你是组合风险总监，专注量化风控。
 **风格**：务实的风控专家，注重实际操作性。
 **核心原则**：
@@ -230,7 +230,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
     color: "red",
     temperature: 0.45,
     modelProvider: ModelProvider.DEEPSEEK,
-    modelName: 'deepseek-reasoner',
+    modelName: 'deepseek-v4-pro',
     systemPrompt: `你是投资决策总经理，拥有唯一决策权。
 你是 **投资决策总经理（GM）**，是整个体系中最终拍板的人。  
 你不犹豫，不模糊，只给明确的方向。  
@@ -293,13 +293,7 @@ export const DEFAULT_AGENTS: Record<AgentRole, AgentConfig> = {
 // 模型选项定义
 // 注意：模型名称需与各平台 API 文档保持一致
 export const MODEL_OPTIONS = [
-  // Google Gemini 系列
-  { provider: ModelProvider.GEMINI, name: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { provider: ModelProvider.GEMINI, name: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
   // DeepSeek 系列
-  { provider: ModelProvider.DEEPSEEK, name: 'deepseek-chat', label: 'DeepSeek' },
-  { provider: ModelProvider.DEEPSEEK, name: 'deepseek-reasoner', label: 'DeepSeek-R1 推理' },
-  // 通义千问系列
-  { provider: ModelProvider.QWEN, name: 'qwen-plus', label: 'Qwen Plus' },
-  { provider: ModelProvider.QWEN, name: 'qwen-turbo', label: 'Qwen Turbo' },
+  { provider: ModelProvider.DEEPSEEK, name: 'deepseek-v4-flash', label: 'DeepSeek-Flash' },
+  { provider: ModelProvider.DEEPSEEK, name: 'deepseek-v4-pro', label: 'DeepSeek-Pro' },
 ] as const;
