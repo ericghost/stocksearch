@@ -33,14 +33,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/beta/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${effectiveApiKey}`
       },
       body: JSON.stringify({
-        model: model || 'deepseek-chat',
+        model: model || 'deepseek-v4-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
